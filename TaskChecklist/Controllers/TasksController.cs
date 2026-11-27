@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TaskChecklist.Data;
 using TaskChecklist.Models;
+using TaskChecklist.ViewModels;
 
 namespace TaskChecklist.Controllers
 {
@@ -30,16 +31,13 @@ namespace TaskChecklist.Controllers
                 return NotFound();
             }
 
-            var taskItem = await _context.TaskItems
-                .Include(t => t.Project)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (taskItem == null)
+            var viewModel = await BuildDetailsViewModelAsync(id.Value);
+            if (viewModel == null)
             {
                 return NotFound();
             }
 
-            return View(taskItem);
+            return View(viewModel);
         }
 
         public IActionResult Create(int? projectId)
@@ -150,6 +148,26 @@ namespace TaskChecklist.Controllers
                 return RedirectToAction("Details", "Projects", new { id = projectId });
             }
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<TaskDetailsViewModel?> BuildDetailsViewModelAsync(int id)
+        {
+            var taskItem = await _context.TaskItems
+                .AsNoTracking()
+                .Include(t => t.Project)
+                .Include(t => t.ChecklistItems.OrderBy(c => c.Id))
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (taskItem == null)
+            {
+                return null;
+            }
+
+            return new TaskDetailsViewModel
+            {
+                Task = taskItem,
+                ChecklistItems = taskItem.ChecklistItems.ToList()
+            };
         }
 
         private async Task<bool> ValidateSelectedProjectAsync(int projectId)
