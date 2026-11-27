@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TaskChecklist.Data;
 using TaskChecklist.Models;
+using TaskChecklist.ViewModels;
 
 namespace TaskChecklist.Controllers
 {
@@ -30,16 +31,63 @@ namespace TaskChecklist.Controllers
                 return NotFound();
             }
 
-            var taskItem = await _context.TaskItems
-                .Include(t => t.Project)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (taskItem == null)
+            var viewModel = await BuildDetailsViewModelAsync(id.Value);
+            if (viewModel == null)
             {
                 return NotFound();
             }
 
-            return View(taskItem);
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddChecklistItem(int id,
+            [Bind(Prefix = nameof(TaskDetailsViewModel.NewChecklistItem))] ChecklistItemInputModel input)
+        {
+            if (!await _context.TaskItems.AnyAsync(t => t.Id == id))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var viewModel = await BuildDetailsViewModelAsync(id);
+                if (viewModel == null)
+                {
+                    return NotFound();
+                }
+
+                viewModel.NewChecklistItem = input;
+                return View(nameof(Details), viewModel);
+            }
+
+            _context.ChecklistItems.Add(new ChecklistItem
+            {
+                TaskItemId = id,
+                Title = input.Title.Trim(),
+                IsDone = input.IsDone
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Checklist item added.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleChecklistItem(int id)
+        {
+            var item = await _context.ChecklistItems.FindAsync(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            item.IsDone = !item.IsDone;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { id = item.TaskItemId });
         }
 
         public IActionResult Create(int? projectId)
@@ -150,6 +198,26 @@ namespace TaskChecklist.Controllers
                 return RedirectToAction("Details", "Projects", new { id = projectId });
             }
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<TaskDetailsViewModel?> BuildDetailsViewModelAsync(int id)
+        {
+            var taskItem = await _context.TaskItems
+                .AsNoTracking()
+                .Include(t => t.Project)
+                .Include(t => t.ChecklistItems.OrderBy(c => c.Id))
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (taskItem == null)
+            {
+                return null;
+            }
+
+            return new TaskDetailsViewModel
+            {
+                Task = taskItem,
+                ChecklistItems = taskItem.ChecklistItems.ToList()
+            };
         }
 
         private async Task<bool> ValidateSelectedProjectAsync(int projectId)

@@ -12,6 +12,7 @@ namespace TaskChecklist.Data
 
         public DbSet<Project> Projects { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
+        public DbSet<ChecklistItem> ChecklistItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,6 +34,17 @@ namespace TaskChecklist.Data
                 entity.HasOne(e => e.Project)
                     .WithMany(p => p.Tasks)
                     .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ChecklistItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+
+                entity.HasOne(e => e.TaskItem)
+                    .WithMany(t => t.ChecklistItems)
+                    .HasForeignKey(e => e.TaskItemId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -138,6 +150,15 @@ namespace TaskChecklist.Data
                     DueDate = seedDate.AddDays(15),
                     IsCompleted = false
                 }
+            );
+
+            modelBuilder.Entity<ChecklistItem>().HasData(
+                new ChecklistItem { Id = 1, TaskItemId = 1, Title = "Sketch homepage layout", IsDone = true },
+                new ChecklistItem { Id = 2, TaskItemId = 1, Title = "Sketch landing page layouts", IsDone = true },
+                new ChecklistItem { Id = 3, TaskItemId = 2, Title = "Define breakpoints", IsDone = true },
+                new ChecklistItem { Id = 4, TaskItemId = 2, Title = "Make navigation responsive", IsDone = false },
+                new ChecklistItem { Id = 5, TaskItemId = 2, Title = "Test on mobile devices", IsDone = false },
+                new ChecklistItem { Id = 6, TaskItemId = 6, Title = "Choose identity provider", IsDone = false }
             );
         }
     }
