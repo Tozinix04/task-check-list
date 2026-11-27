@@ -25,5 +25,7 @@ namespace TaskChecklist.Models
 
         [ValidateNever]
         public Project Project { get; set; } = null!;
+
+        public ICollection<ChecklistItem> ChecklistItems { get; set; } = new List<ChecklistItem>();
     }
 }

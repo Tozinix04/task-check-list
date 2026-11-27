@@ -22,6 +22,76 @@ namespace TaskChecklist.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("TaskChecklist.Models.ChecklistItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsDone")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TaskItemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskItemId");
+
+                    b.ToTable("ChecklistItems");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsDone = true,
+                            TaskItemId = 1,
+                            Title = "Sketch homepage layout"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            IsDone = true,
+                            TaskItemId = 1,
+                            Title = "Sketch landing page layouts"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            IsDone = true,
+                            TaskItemId = 2,
+                            Title = "Define breakpoints"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            IsDone = false,
+                            TaskItemId = 2,
+                            Title = "Make navigation responsive"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            IsDone = false,
+                            TaskItemId = 2,
+                            Title = "Test on mobile devices"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            IsDone = false,
+                            TaskItemId = 6,
+                            Title = "Choose identity provider"
+                        });
+                });
+
             modelBuilder.Entity("TaskChecklist.Models.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -42,7 +112,7 @@ namespace TaskChecklist.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Projects", (string)null);
+                    b.ToTable("Projects");
 
                     b.HasData(
                         new
@@ -96,7 +166,7 @@ namespace TaskChecklist.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("TaskItems", (string)null);
+                    b.ToTable("TaskItems");
 
                     b.HasData(
                         new
@@ -173,6 +243,17 @@ namespace TaskChecklist.Migrations
                         });
                 });
 
+            modelBuilder.Entity("TaskChecklist.Models.ChecklistItem", b =>
+                {
+                    b.HasOne("TaskChecklist.Models.TaskItem", "TaskItem")
+                        .WithMany("ChecklistItems")
+                        .HasForeignKey("TaskItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TaskItem");
+                });
+
             modelBuilder.Entity("TaskChecklist.Models.TaskItem", b =>
                 {
                     b.HasOne("TaskChecklist.Models.Project", "Project")
@@ -187,6 +268,11 @@ namespace TaskChecklist.Migrations
             modelBuilder.Entity("TaskChecklist.Models.Project", b =>
                 {
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("TaskChecklist.Models.TaskItem", b =>
+                {
+                    b.Navigation("ChecklistItems");
                 });
 #pragma warning restore 612, 618
         }
