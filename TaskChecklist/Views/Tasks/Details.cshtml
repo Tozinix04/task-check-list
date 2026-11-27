@@ -6,6 +6,14 @@
 
 <h1>@Model.Task.Title</h1>
 
+@if (TempData["Success"] is string successMessage)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @successMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <div class="card mb-4">
     <div class="card-header">
         <strong>Project:</strong>
@@ -63,9 +71,30 @@
         else
         {
             <div class="alert alert-info mb-0">
-                No checklist items yet.
+                No checklist items yet. Add the first one below.
             </div>
         }
+    </div>
+    <div class="card-footer">
+        <form asp-action="AddChecklistItem" asp-route-id="@Model.Task.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row g-2 align-items-start">
+                <div class="col-md">
+                    <label asp-for="NewChecklistItem.Title" class="visually-hidden"></label>
+                    <input asp-for="NewChecklistItem.Title" class="form-control" placeholder="New checklist item" />
+                    <span asp-validation-for="NewChecklistItem.Title" class="text-danger"></span>
+                </div>
+                <div class="col-md-auto pt-md-2">
+                    <div class="form-check">
+                        <input asp-for="NewChecklistItem.IsDone" class="form-check-input" />
+                        <label asp-for="NewChecklistItem.IsDone" class="form-check-label"></label>
+                    </div>
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-primary">Add item</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -73,3 +102,7 @@
     <a asp-action="Edit" asp-route-id="@Model.Task.Id" class="btn btn-warning">Edit</a>
     <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Task.ProjectId" class="btn btn-secondary">Back to Project</a>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

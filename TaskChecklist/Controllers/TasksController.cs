@@ -40,6 +40,40 @@ namespace TaskChecklist.Controllers
             return View(viewModel);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddChecklistItem(int id,
+            [Bind(Prefix = nameof(TaskDetailsViewModel.NewChecklistItem))] ChecklistItemInputModel input)
+        {
+            if (!await _context.TaskItems.AnyAsync(t => t.Id == id))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var viewModel = await BuildDetailsViewModelAsync(id);
+                if (viewModel == null)
+                {
+                    return NotFound();
+                }
+
+                viewModel.NewChecklistItem = input;
+                return View(nameof(Details), viewModel);
+            }
+
+            _context.ChecklistItems.Add(new ChecklistItem
+            {
+                TaskItemId = id,
+                Title = input.Title.Trim(),
+                IsDone = input.IsDone
+            });
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Checklist item added.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         public IActionResult Create(int? projectId)
         {
             ViewData["ProjectId"] = new SelectList(_context.Projects, "Id", "Name", projectId);

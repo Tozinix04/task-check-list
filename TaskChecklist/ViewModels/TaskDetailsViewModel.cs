@@ -9,5 +9,7 @@ namespace TaskChecklist.ViewModels
         public IReadOnlyList<ChecklistItem> ChecklistItems { get; set; } = [];
 
         public int DoneChecklistItemsCount => ChecklistItems.Count(item => item.IsDone);
+
+        public ChecklistItemInputModel NewChecklistItem { get; set; } = new();
     }
 }
