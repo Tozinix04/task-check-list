@@ -21,7 +21,7 @@ namespace TaskChecklist.Controllers
             return View(projects);
         }
 
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id, TaskStatusFilter? status)
         {
             if (id == null)
             {
@@ -40,10 +40,19 @@ namespace TaskChecklist.Controllers
             var projectTasks = _context.TaskItems.Where(t => t.ProjectId == project.Id);
             var projectChecklistItems = _context.ChecklistItems.Where(c => c.TaskItem.ProjectId == project.Id);
 
+            var statusFilter = status.HasValue && Enum.IsDefined(status.Value) ? status.Value : TaskStatusFilter.All;
+            var filteredTasks = statusFilter switch
+            {
+                TaskStatusFilter.Completed => projectTasks.Where(t => t.IsCompleted),
+                TaskStatusFilter.Pending => projectTasks.Where(t => !t.IsCompleted),
+                _ => projectTasks
+            };
+
             var viewModel = new ProjectDetailsViewModel
             {
                 Project = project,
-                Tasks = await projectTasks
+                StatusFilter = statusFilter,
+                Tasks = await filteredTasks
                     .AsNoTracking()
                     .OrderBy(t => t.Id)
                     .ToListAsync(),

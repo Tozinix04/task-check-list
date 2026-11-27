@@ -53,6 +53,25 @@
     <a asp-controller="Tasks" asp-action="Create" asp-route-projectId="@Model.Project.Id" class="btn btn-success">Add Task</a>
 </div>
 
+@{
+    var filters = new[]
+    {
+        (Filter: TaskStatusFilter.All, Label: "All"),
+        (Filter: TaskStatusFilter.Completed, Label: "Completed"),
+        (Filter: TaskStatusFilter.Pending, Label: "Not completed")
+    };
+}
+<nav class="btn-group mb-3" role="group" aria-label="Filter tasks by status">
+    @foreach (var option in filters)
+    {
+        var isActive = option.Filter == Model.StatusFilter;
+        <a asp-action="Details" asp-route-id="@Model.Project.Id"
+           asp-route-status="@(option.Filter == TaskStatusFilter.All ? null : option.Filter.ToString().ToLowerInvariant())"
+           class="btn btn-outline-primary @(isActive ? "active" : null)"
+           aria-current="@(isActive ? "page" : null)">@option.Label</a>
+    }
+</nav>
+
 @if (Model.Tasks.Any())
 {
     <table class="table table-striped">
@@ -93,7 +112,7 @@
 else
 {
     <div class="alert alert-info">
-        No tasks have been added to this project yet.
+        @Model.EmptyTasksMessage
     </div>
 }
 
