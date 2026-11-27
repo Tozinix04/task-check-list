@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskChecklist.Data;
 using TaskChecklist.Models;
+using TaskChecklist.ViewModels;
 
 namespace TaskChecklist.Controllers
 {
@@ -28,7 +29,7 @@ namespace TaskChecklist.Controllers
             }
 
             var project = await _context.Projects
-                .Include(p => p.Tasks)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
@@ -36,7 +37,26 @@ namespace TaskChecklist.Controllers
                 return NotFound();
             }
 
-            return View(project);
+            var projectTasks = _context.TaskItems.Where(t => t.ProjectId == project.Id);
+            var projectChecklistItems = _context.ChecklistItems.Where(c => c.TaskItem.ProjectId == project.Id);
+
+            var viewModel = new ProjectDetailsViewModel
+            {
+                Project = project,
+                Tasks = await projectTasks
+                    .AsNoTracking()
+                    .OrderBy(t => t.Id)
+                    .ToListAsync(),
+                Progress = new ProjectProgress
+                {
+                    TotalTasks = await projectTasks.CountAsync(),
+                    CompletedTasks = await projectTasks.CountAsync(t => t.IsCompleted),
+                    TotalChecklistItems = await projectChecklistItems.CountAsync(),
+                    DoneChecklistItems = await projectChecklistItems.CountAsync(c => c.IsDone)
+                }
+            };
+
+            return View(viewModel);
         }
 
         public IActionResult Create()
