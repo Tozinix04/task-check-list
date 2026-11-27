@@ -74,6 +74,22 @@ namespace TaskChecklist.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleChecklistItem(int id)
+        {
+            var item = await _context.ChecklistItems.FindAsync(id);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            item.IsDone = !item.IsDone;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Details), new { id = item.TaskItemId });
+        }
+
         public IActionResult Create(int? projectId)
         {
             ViewData["ProjectId"] = new SelectList(_context.Projects, "Id", "Name", projectId);
