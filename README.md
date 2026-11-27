@@ -24,18 +24,26 @@ ASP.NET Core MVC (.NET 10) + Entity Framework Core 10 + SQL Server.
    docker compose up -d
    ```
 
-3. **Set the connection string.** `appsettings.json` only contains a placeholder; the real
-   password is never committed. Use one of the following (same password as in `.env`):
+3. **Set the connection string.** `appsettings.json` contains a placeholder. Use the same
+   password as in `.env`. If you changed `MSSQL_PORT` in `.env`, replace `1433` below
+   with that port. The command prompts for the password and quotes it for SQL Server
+   so it can contain semicolons or quotation marks.
 
    ```bash
-   dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
-     "Server=127.0.0.1,1433;Database=TaskChecklistDb;User Id=sa;Password=REPLACE_WITH_YOUR_PASSWORD;TrustServerCertificate=True;" \
-     --project TaskChecklist
+   (
+     printf 'SQL Server password: '
+     IFS= read -rs taskchecklist_sql_password || exit 1
+     printf '\n'
+     dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+       "Server=127.0.0.1,1433;Database=TaskChecklistDb;User Id=sa;Password=\"${taskchecklist_sql_password//\"/\"\"}\";TrustServerCertificate=True;" \
+       --project TaskChecklist
+   )
    ```
 
-   or create `TaskChecklist/appsettings.Development.json` (git-ignored) with a
-   `ConnectionStrings:DefaultConnection` entry, or export the environment variable
-   `ConnectionStrings__DefaultConnection`.
+   You can also set `ConnectionStrings:DefaultConnection` in the git-ignored
+   `TaskChecklist/appsettings.Development.json` or export
+   `ConnectionStrings__DefaultConnection`. When composing the connection string
+   yourself, put double quotes around the password value and double any `"` within it.
 
 4. **Run the application.** Pending EF Core migrations are applied automatically at startup
    (`Database.Migrate()` in `Program.cs`):
@@ -48,12 +56,13 @@ ASP.NET Core MVC (.NET 10) + Entity Framework Core 10 + SQL Server.
 
 ## EF Core migrations
 
-The `dotnet-ef` CLI is pinned in the local tool manifest (`dotnet-tools.json`):
+The `dotnet-ef` CLI is pinned in the local tool manifest (`dotnet-tools.json`).
+Replace `AddTaskPriority` with a name that describes your migration.
 
 ```bash
 dotnet tool restore
 dotnet ef migrations list --project TaskChecklist
-dotnet ef migrations add <Name> --project TaskChecklist
+dotnet ef migrations add AddTaskPriority --project TaskChecklist
 dotnet ef database update --project TaskChecklist
 ```
 
